@@ -13,7 +13,7 @@ from rtp_podcaster.extractor import Episode
 class RSSGenerator:
     """Generates an RSS 2.0 valid podcast XML stream natively applying podcast tags."""
 
-    DEFAULT_SHOW_NAME = "Alta Tensão"
+    DEFAULT_SHOW_NAME = "Nome Predefinido"
 
     def __init__(self, program_id: int, show_name: Optional[str] = None):
         """Initialize the generator with a specific RTP program catalog ID."""
