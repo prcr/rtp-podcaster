@@ -104,6 +104,12 @@ class RTPPlayExtractor:
             date_str = date_el.get_text(strip=True) if date_el else ""
             pub_date = parse_rtp_date(date_str) if date_str else None
 
+            if not pub_date:
+                print(
+                    f"Warning: Failed to parse date string '{date_str}', falling back to current time."
+                )
+                pub_date = datetime.now(timezone.utc)
+
             episodes.append(
                 Episode(
                     url=episode_url,
