@@ -1,0 +1,30 @@
+[project]
+name = "rtp-podcaster"
+version = "0.1.0"
+description = "RTP Play Podcaster XML Generator"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.30.0",
+    "beautifulsoup4>=4.12.0"
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
+    "pre-commit>=3.6.0"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
