@@ -7,7 +7,7 @@ from typing import Optional
 import feedparser
 from feedgen.feed import FeedGenerator
 
-from rtp_podcaster.extractor import Episode
+from rtp_podcaster.extractor import Episode, extract_program_id
 
 
 class RSSGenerator:
@@ -15,11 +15,11 @@ class RSSGenerator:
 
     DEFAULT_SHOW_NAME = "Nome Predefinido"
 
-    def __init__(self, program_id: int, show_name: Optional[str] = None):
-        """Initialize the generator with a specific RTP program catalog ID."""
-        self.program_id = program_id
+    def __init__(self, show_url: str, show_name: Optional[str] = None):
+        """Initialize the generator with the full RTP Play show URL."""
+        self.show_url = show_url
+        self.program_id = extract_program_id(show_url)
         self.show_name = show_name or self.DEFAULT_SHOW_NAME
-        self.show_url = f"https://www.rtp.pt/play/p{self.program_id}/alta-tensao"
 
     def get_existing_guids(self, feed_path: str) -> set[str]:
         """Return a set of episode GUIDs originally present inside the existing feed."""

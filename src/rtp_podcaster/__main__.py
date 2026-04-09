@@ -3,7 +3,7 @@
 import argparse
 import sys
 
-from rtp_podcaster.extractor import RTPPlayExtractor
+from rtp_podcaster.extractor import RTPPlayExtractor, extract_program_id
 from rtp_podcaster.generator import RSSGenerator
 
 
@@ -17,7 +17,10 @@ def parse_args() -> argparse.Namespace:
         help="Output path for the XML feed. Defaults to public/p<program_id>_feed.xml",
     )
     parser.add_argument(
-        "--program-id", type=int, default=254, help="Target RTP Play program ID configuration."
+        "--show-url",
+        type=str,
+        default="https://www.rtp.pt/play/p254/alta-tensao",
+        help="Full URL of the RTP Play show page.",
     )
     parser.add_argument(
         "--max-episodes", type=int, default=20, help="Maximum number of episodes to process."
@@ -33,16 +36,17 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     """Execute main generation procedure block."""
     args = parse_args()
-    program_id = args.program_id
+    show_url = args.show_url
+    program_id = extract_program_id(show_url)
 
-    # Calculate output string dynamically securely
+    # Calculate output path from the program ID derived from the show URL
     if not args.output:
         args.output = f"public/p{program_id}_feed.xml"
 
-    extractor = RTPPlayExtractor(program_id=program_id)
+    extractor = RTPPlayExtractor(show_url=show_url)
 
     print("Fetching show metadata...")
-    show_name, image_url = extractor.get_show_metadata(program_id=program_id)
+    show_name, image_url = extractor.get_show_metadata()
     if show_name:
         print(f"Found show name: {show_name}")
     else:
@@ -52,7 +56,7 @@ def main() -> None:
     else:
         print("Warning: Could not find show image URL.")
 
-    generator = RSSGenerator(program_id=program_id, show_name=show_name)
+    generator = RSSGenerator(show_url=show_url, show_name=show_name)
 
     print(f"Checking existing feed at {args.output}...")
     if args.force_refresh:

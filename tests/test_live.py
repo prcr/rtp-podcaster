@@ -8,7 +8,7 @@ from rtp_podcaster.extractor import RTPPlayExtractor, parse_rtp_date
 @pytest.mark.live
 def test_live_episode_extraction():
     """Verify live extraction successfully navigates RTP ecosystem natively."""
-    extractor = RTPPlayExtractor(program_id=254)
+    extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p254/alta-tensao")
     # Target heavily minimized page bounds limiting remote requests securely
     episodes = extractor.get_episode_list(max_episodes=2)
 

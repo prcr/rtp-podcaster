@@ -64,6 +64,14 @@ def strip_query_string(url: str) -> str:
     return urlunparse(parsed._replace(query="", fragment=""))
 
 
+def extract_program_id(show_url: str) -> int:
+    """Extract the numeric program ID from an RTP Play show URL."""
+    match = re.search(r"/p(\d+)/", show_url)
+    if not match:
+        raise ValueError(f"Could not extract program ID from URL: {show_url}")
+    return int(match.group(1))
+
+
 class RTPPlayExtractor:
     """Extracts podcast episodes from RTP Play."""
 
@@ -74,9 +82,10 @@ class RTPPlayExtractor:
         "Cookie": "rtp_cookie_parental=0; rtp_privacy=666; rtp_cookie_privacy=permit 1,2,3,4;",
     }
 
-    def __init__(self, program_id: int):
-        """Initialize the extractor with a specific RTP program catalog ID."""
-        self.program_id = program_id
+    def __init__(self, show_url: str):
+        """Initialize the extractor with the full RTP Play show URL."""
+        self.show_url = show_url
+        self.program_id = extract_program_id(show_url)
         self.session = requests.Session()
         self.session.headers.update(self.HEADERS)
         # Force HTTPAdapter standard networking config to prevent ipv6 environment hangs
@@ -130,10 +139,9 @@ class RTPPlayExtractor:
 
         return episodes
 
-    def get_show_metadata(self, program_id: int) -> tuple[Optional[str], Optional[str]]:
+    def get_show_metadata(self) -> tuple[Optional[str], Optional[str]]:
         """Fetch the show page and return (show_name, image_url) from og: meta tags."""
-        show_url = f"{self.BASE_URL}/play/p{program_id}/alta-tensao"
-        html = self.fetch(show_url)
+        html = self.fetch(self.show_url)
         soup = BeautifulSoup(html, "html.parser")
 
         show_name: Optional[str] = None
