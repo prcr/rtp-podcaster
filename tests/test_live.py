@@ -30,3 +30,9 @@ def test_live_episode_extraction():
     assert mp3_url is not None
     assert mp3_url.startswith("http")
     assert ".mp3" in mp3_url.lower()
+
+    # Check show image URL is fetched cleanly without query strings
+    image_url = extractor.get_show_image_url(program_id=254)
+    assert image_url is not None, "Could not find show image URL in og:image meta tag."
+    assert image_url.startswith("http")
+    assert "?" not in image_url, f"Image URL still contains a query string: '{image_url}'"

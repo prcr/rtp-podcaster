@@ -4,9 +4,10 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import urlparse, urlunparse
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 
 @dataclass
@@ -55,6 +56,12 @@ def parse_rtp_date(date_str: str) -> Optional[datetime]:
             pass
 
     return None
+
+
+def strip_query_string(url: str) -> str:
+    """Remove any query string from a URL, returning only the bare path."""
+    parsed = urlparse(url)
+    return urlunparse(parsed._replace(query="", fragment=""))
 
 
 class RTPPlayExtractor:
@@ -122,6 +129,16 @@ class RTPPlayExtractor:
             )
 
         return episodes
+
+    def get_show_image_url(self, program_id: int) -> Optional[str]:
+        """Fetch the show page and extract the image URL from the og:image meta tag."""
+        show_url = f"{self.BASE_URL}/play/p{program_id}/alta-tensao"
+        html = self.fetch(show_url)
+        soup = BeautifulSoup(html, "html.parser")
+        og_image = soup.find("meta", property="og:image")
+        if isinstance(og_image, Tag) and og_image.get("content"):
+            return strip_query_string(str(og_image["content"]))
+        return None
 
     def extract_mp3_url(self, episode_url: str) -> Optional[str]:
         """Parse an episode web page explicitly searching for the embedded MP3 payload."""

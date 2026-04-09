@@ -2,6 +2,7 @@
 
 import os
 from datetime import datetime, timezone
+from typing import Optional
 
 import feedparser
 from feedgen.feed import FeedGenerator
@@ -43,6 +44,7 @@ class RSSGenerator:
         existing_feed_path: str,
         max_episodes: int = 20,
         force_refresh: bool = False,
+        image_url: Optional[str] = None,
     ) -> None:
         """Parse external file, merge new elements natively, and securely dump to targets."""
         fg = FeedGenerator()
@@ -53,6 +55,9 @@ class RSSGenerator:
         fg.link(href=self.show_url, rel="alternate")
         fg.description(f"Podcast feed for {self.SHOW_NAME} automatically generated from RTP Play.")
         fg.language("pt")
+
+        if image_url:
+            fg.image(image_url)
 
         all_entries_data = []
 

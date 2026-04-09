@@ -42,6 +42,13 @@ def main() -> None:
     extractor = RTPPlayExtractor(program_id=program_id)
     generator = RSSGenerator(program_id=program_id)
 
+    print("Fetching show image URL...")
+    image_url = extractor.get_show_image_url(program_id=program_id)
+    if image_url:
+        print(f"Found show image: {image_url}")
+    else:
+        print("Warning: Could not find show image URL.")
+
     print(f"Checking existing feed at {args.output}...")
     if args.force_refresh:
         print("Flag --force-refresh active: Rebuilding entirely from scratch.")
@@ -78,6 +85,7 @@ def main() -> None:
         existing_feed_path=args.output,
         max_episodes=args.max_episodes,
         force_refresh=args.force_refresh,
+        image_url=image_url,
     )
 
     print(f"Successfully generated new feed payload into {args.output}!")

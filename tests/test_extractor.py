@@ -6,7 +6,7 @@ import pytest
 import requests
 from datetime import datetime, timezone
 
-from rtp_podcaster.extractor import RTPPlayExtractor, parse_rtp_date
+from rtp_podcaster.extractor import RTPPlayExtractor, parse_rtp_date, strip_query_string
 
 
 def test_extractor_init():
@@ -137,3 +137,39 @@ def test_parse_rtp_date():
     # Missing formatting variables safely fallback cleanly
     invalid = parse_rtp_date("Broken Date Value")
     assert invalid is None
+
+
+def test_strip_query_string():
+    """Verify query strings and fragments are removed from URLs correctly."""
+    assert (
+        strip_query_string("https://cdn.rtp.pt/image.jpg?w=100&h=100")
+        == "https://cdn.rtp.pt/image.jpg"
+    )
+    assert strip_query_string("https://cdn.rtp.pt/image.jpg") == "https://cdn.rtp.pt/image.jpg"
+    assert (
+        strip_query_string("https://cdn.rtp.pt/image.jpg#anchor") == "https://cdn.rtp.pt/image.jpg"
+    )
+
+
+@patch.object(RTPPlayExtractor, "fetch")
+def test_get_show_image_url(mock_fetch):
+    """Verify og:image meta tag is correctly extracted and query string is stripped."""
+    mock_fetch.return_value = """
+    <html>
+        <head>
+            <meta property="og:image" content="https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg?w=200" />
+        </head>
+    </html>
+    """
+    extractor = RTPPlayExtractor(program_id=254)
+    url = extractor.get_show_image_url(program_id=254)
+    assert url == "https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg"
+
+
+@patch.object(RTPPlayExtractor, "fetch")
+def test_get_show_image_url_missing(mock_fetch):
+    """Verify None is returned when no og:image tag is present."""
+    mock_fetch.return_value = "<html><head></head></html>"
+    extractor = RTPPlayExtractor(program_id=254)
+    url = extractor.get_show_image_url(program_id=254)
+    assert url is None

@@ -148,3 +148,35 @@ def test_generator_edge_cases():
 
             # Line 100 (continue lacking enclosure) & Line 114 (bad pubdate passed)
             gen.create_or_update_feed([], test_file)
+
+
+def test_generator_image_url():
+    """Verify that a provided image URL is written into the generated RSS feed."""
+    gen = RSSGenerator(program_id=254)
+    episodes = [
+        Episode(
+            url="http://test.com/ep1",
+            title="Test Episode",
+            date_str="8 Abr. 2026",
+            guid="guid-img-test",
+            mp3_url="http://test.com/ep1.mp3",
+        )
+    ]
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_file = os.path.join(tmpdir, "test_feed.xml")
+        gen.create_or_update_feed(
+            episodes,
+            test_file,
+            image_url="https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg",
+        )
+
+        tree = ET.parse(test_file)
+        root = tree.getroot()
+        channel = root.find("channel")
+        assert channel is not None
+        image = channel.find("image")
+        assert image is not None
+        url_el = image.find("url")
+        assert url_el is not None
+        assert url_el.text == "https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg"
