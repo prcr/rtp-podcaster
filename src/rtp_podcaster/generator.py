@@ -97,6 +97,7 @@ class RSSGenerator:
                         "guid": ep.guid,
                         "enclosure_url": ep.mp3_url,
                         "pubDate": ep.pub_date or datetime.now(timezone.utc),
+                        "image_url": image_url,
                     },
                 )
 
@@ -116,6 +117,9 @@ class RSSGenerator:
 
             # Explicit extension tag integrations
             fe.enclosure(edata["enclosure_url"], "0", "audio/mpeg")
+
+            if edata.get("image_url"):
+                fe.podcast.itunes_image(edata["image_url"])
 
             if edata.get("pubDate"):
                 try:

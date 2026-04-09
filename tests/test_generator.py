@@ -175,8 +175,21 @@ def test_generator_image_url():
         root = tree.getroot()
         channel = root.find("channel")
         assert channel is not None
+
+        # Verify channel-level <image>
         image = channel.find("image")
         assert image is not None
         url_el = image.find("url")
         assert url_el is not None
         assert url_el.text == "https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg"
+
+        # Verify per-episode <itunes:image>
+        ns = {"itunes": "http://www.itunes.com/dtds/podcast-1.0.dtd"}
+        item = root.find(".//item")
+        assert item is not None
+        itunes_image = item.find("itunes:image", ns)
+        assert itunes_image is not None
+        assert (
+            itunes_image.get("href")
+            == "https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg"
+        )
