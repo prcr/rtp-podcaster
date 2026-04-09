@@ -57,4 +57,23 @@ jobs:
         run: uv sync
 
       - name: Run Pytest
-        run: uv run pytest
+        run: uv run pytest --cov=rtp_podcaster
+
+      - name: Upload Coverage to Coveralls
+        env:
+          COVERALLS_REPO_TOKEN: bMIvnf7FwE6Is0R0o4lIwg50ZHVVGYDl8
+          COVERALLS_FLAG_NAME: python-${{ matrix.python-version }}
+          COVERALLS_PARALLEL: true
+        run: uv run coveralls --service=github-actions
+
+  coveralls:
+    name: Indicate completion to coveralls.io
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disable explicit pip cache warning natively
+        run: pip install --upgrade coveralls
+      - name: Set Coveralls finalization securely
+        env:
+          COVERALLS_REPO_TOKEN: bMIvnf7FwE6Is0R0o4lIwg50ZHVVGYDl8
+        run: coveralls --finish --service=github-actions
