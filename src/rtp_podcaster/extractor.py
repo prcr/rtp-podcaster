@@ -38,13 +38,14 @@ def parse_rtp_date(date_str: str) -> Optional[datetime]:
         "dez": 12,
     }
 
-    clean_str = date_str.lower().replace(".", "").strip()
+    # Treat all spaces and periods as explicit delimiters
+    clean_str = date_str.lower().replace(".", " ").strip()
     parts = clean_str.split()
 
     if len(parts) >= 3:
         try:
             day = int(parts[0])
-            month_str = parts[1][:3]
+            month_str = parts[1]
             month = months.get(month_str)
             year = int(parts[2])
 
