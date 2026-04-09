@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload Coverage to Coveralls
         env:
-          COVERALLS_REPO_TOKEN: bMIvnf7FwE6Is0R0o4lIwg50ZHVVGYDl8
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
           COVERALLS_FLAG_NAME: python-${{ matrix.python-version }}
           COVERALLS_PARALLEL: true
         run: uv run coveralls --service=github-actions
@@ -75,5 +75,5 @@ jobs:
         run: pip install --upgrade coveralls
       - name: Set Coveralls finalization securely
         env:
-          COVERALLS_REPO_TOKEN: bMIvnf7FwE6Is0R0o4lIwg50ZHVVGYDl8
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         run: coveralls --finish --service=github-actions
