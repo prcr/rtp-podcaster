@@ -92,7 +92,7 @@ class RSSGenerator:
                     idx,
                     {
                         "title": ep.title,
-                        "description": f"{ep.title} ({ep.date_str})",
+                        "description": ep.title,
                         "link": ep.url,
                         "guid": ep.guid,
                         "enclosure_url": ep.mp3_url,
