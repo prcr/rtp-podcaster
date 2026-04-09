@@ -25,7 +25,7 @@ def test_parse_args_defaults():
         assert parsed.output is None
         assert parsed.program_id == 254
         assert parsed.max_episodes == 20
-        assert parsed.ignore_existing is False
+        assert parsed.force_refresh is False
 
 
 @patch("rtp_podcaster.__main__.RSSGenerator")

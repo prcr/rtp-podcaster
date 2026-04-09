@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
         "--max-episodes", type=int, default=20, help="Maximum number of episodes to process."
     )
     parser.add_argument(
-        "--ignore-existing",
+        "--force-refresh",
         action="store_true",
         help="Disregard the historical feed metadata and seamlessly rebuild the entire feed natively.",
     )
@@ -43,8 +43,8 @@ def main() -> None:
     generator = RSSGenerator(program_id=program_id)
 
     print(f"Checking existing feed at {args.output}...")
-    if args.ignore_existing:
-        print("Flag --ignore-existing active: Rebuilding entirely from scratch.")
+    if args.force_refresh:
+        print("Flag --force-refresh active: Rebuilding entirely from scratch.")
         guids = set()
     else:
         guids = generator.get_existing_guids(args.output)
@@ -77,7 +77,7 @@ def main() -> None:
         new_episodes,
         existing_feed_path=args.output,
         max_episodes=args.max_episodes,
-        ignore_existing=args.ignore_existing,
+        force_refresh=args.force_refresh,
     )
 
     print(f"Successfully generated new feed payload into {args.output}!")

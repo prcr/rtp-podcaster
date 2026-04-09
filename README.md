@@ -46,6 +46,7 @@ You can override the default behavior using command-line arguments:
 - `--output`: Define the path for the generated feed file (default computes to `public/p<program_id>_feed.xml`).
 - `--program-id`: Set the target RTP Play program ID to catalog (default: `254`).
 - `--max-episodes`: Set the maximum number of episodes to index in the feed (default: `20`).
+- `--force-refresh`: Disregard the historical feed metadata and seamlessly rebuild the entire feed from the live external payload.
 
 Example:
 ```bash
