@@ -33,15 +33,27 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Fetch previous feed.xml
+        run: |
+          mkdir -p public
+          curl -f -s -o public/feed.xml https://prcr.github.io/rtp-podcaster/feed.xml || echo "No previous feed found, starting fresh."
+
       - name: Generate Podcast Feed
         run: |
           mkdir -p public
           uv run rtp_podcaster --output public/feed.xml
 
+      - name: Upload RSS Feed Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: podcast-feed
+          path: public/feed.xml
+          retention-days: 30
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'public'
