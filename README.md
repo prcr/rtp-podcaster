@@ -1,5 +1,7 @@
 # RTP Podcaster
 
+[![Coverage Status](https://coveralls.io/repos/github/prcr/rtp-podcaster/badge.svg?branch=main)](https://coveralls.io/github/prcr/rtp-podcaster?branch=main)
+
 Generates an RSS 2.0 podcast feed for the "Alta Tensão" radio show from RTP Play.
 It scrapes the episodes list, retrieves the mp3 for new episodes,
 and updates a local `public/feed.xml` file by default.
