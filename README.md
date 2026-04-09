@@ -2,9 +2,9 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/prcr/rtp-podcaster/badge.svg?branch=main)](https://coveralls.io/github/prcr/rtp-podcaster?branch=main)
 
-Generates an RSS 2.0 podcast feed for the "Alta Tensão" radio show from RTP Play.
+Generates an RSS 2.0 podcast feed for the "Alta Tensão" radio show from RTP Play (program ID 254 by default).
 It scrapes the episodes list, retrieves the mp3 for new episodes,
-and updates a local `public/feed.xml` file by default.
+and updates a local `public/p254_feed.xml` file by default (naming tracks program ID).
 
 ## Requirements
 
@@ -43,7 +43,8 @@ uv run rtp_podcaster
 
 You can override the default behavior using command-line arguments:
 
-- `--output`: Define the path for the generated feed file (default: `public/feed.xml`).
+- `--output`: Define the path for the generated feed file (default computes to `public/p<program_id>_feed.xml`).
+- `--program-id`: Set the target RTP Play program ID to catalog (default: `254`).
 - `--max-episodes`: Set the maximum number of episodes to index in the feed (default: `20`).
 
 Example:
