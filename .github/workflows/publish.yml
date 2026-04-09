@@ -5,6 +5,10 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
+env:
+  # The live URL of the published feed. Used to fetch history during generation.
+  LIVE_FEED_URL: "https://dev.diffraction.pt/feed.xml"
+
 permissions:
   contents: read
   pages: write
@@ -36,7 +40,7 @@ jobs:
       - name: Fetch previous feed.xml
         run: |
           mkdir -p public
-          curl -f -s -o public/feed.xml https://prcr.github.io/rtp-podcaster/feed.xml || echo "No previous feed found, starting fresh."
+          curl -f -s -o public/feed.xml ${{ env.LIVE_FEED_URL }} || echo "No previous feed found, starting fresh."
 
       - name: Generate Podcast Feed
         run: |
