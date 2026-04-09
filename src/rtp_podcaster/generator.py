@@ -38,7 +38,11 @@ class RSSGenerator:
         return guids
 
     def create_or_update_feed(
-        self, new_episodes: list[Episode], existing_feed_path: str, max_episodes: int = 20
+        self,
+        new_episodes: list[Episode],
+        existing_feed_path: str,
+        max_episodes: int = 20,
+        ignore_existing: bool = False,
     ) -> None:
         """Parse external file, merge new elements natively, and securely dump to targets."""
         fg = FeedGenerator()
@@ -53,7 +57,7 @@ class RSSGenerator:
         all_entries_data = []
 
         # Read historical episodes first
-        if os.path.exists(existing_feed_path):
+        if not ignore_existing and os.path.exists(existing_feed_path):
             try:
                 parsed = feedparser.parse(existing_feed_path)
                 for entry in parsed.entries:
