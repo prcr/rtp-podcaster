@@ -22,7 +22,8 @@ def test_parse_args_defaults():
     test_args = ["rtp_podcaster"]
     with patch.object(sys, "argv", test_args):
         parsed = parse_args()
-        assert parsed.output == "public/feed.xml"
+        assert parsed.output is None
+        assert parsed.program_id == 254
         assert parsed.max_episodes == 20
 
 

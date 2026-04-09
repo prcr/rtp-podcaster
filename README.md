@@ -4,6 +4,7 @@
 
 Generates an RSS 2.0 podcast feed for the "Alta Tensão" radio show from RTP Play (program ID 254 by default).
 It scrapes the episodes list, retrieves the mp3 for new episodes,
+and updates a local `public/p254_feed.xml` file by default (naming tracks program ID).
 
 ## Requirements
 
