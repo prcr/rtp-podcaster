@@ -130,15 +130,29 @@ class RTPPlayExtractor:
 
         return episodes
 
-    def get_show_image_url(self, program_id: int) -> Optional[str]:
-        """Fetch the show page and extract the image URL from the og:image meta tag."""
+    def get_show_metadata(self, program_id: int) -> tuple[Optional[str], Optional[str]]:
+        """Fetch the show page and return (show_name, image_url) from og: meta tags."""
         show_url = f"{self.BASE_URL}/play/p{program_id}/alta-tensao"
         html = self.fetch(show_url)
         soup = BeautifulSoup(html, "html.parser")
+
+        show_name: Optional[str] = None
+        og_title = soup.find("meta", property="og:title")
+        if isinstance(og_title, Tag) and og_title.get("content"):
+            raw_title = str(og_title["content"]).strip()
+            # Strip common platform suffixes like " - RTP Play" or " | RTP"
+            for sep in (" - ", " | "):
+                if sep in raw_title:
+                    raw_title = raw_title.split(sep)[0].strip()
+                    break
+            show_name = raw_title
+
+        image_url: Optional[str] = None
         og_image = soup.find("meta", property="og:image")
         if isinstance(og_image, Tag) and og_image.get("content"):
-            return strip_query_string(str(og_image["content"]))
-        return None
+            image_url = strip_query_string(str(og_image["content"]))
+
+        return show_name, image_url
 
     def extract_mp3_url(self, episode_url: str) -> Optional[str]:
         """Parse an episode web page explicitly searching for the embedded MP3 payload."""

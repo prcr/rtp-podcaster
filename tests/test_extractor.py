@@ -152,24 +152,27 @@ def test_strip_query_string():
 
 
 @patch.object(RTPPlayExtractor, "fetch")
-def test_get_show_image_url(mock_fetch):
-    """Verify og:image meta tag is correctly extracted and query string is stripped."""
+def test_get_show_metadata(mock_fetch):
+    """Verify og:title and og:image meta tags are extracted and transformed correctly."""
     mock_fetch.return_value = """
     <html>
         <head>
+            <meta property="og:title" content="Alta Tensão - RTP Play" />
             <meta property="og:image" content="https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg?w=200" />
         </head>
     </html>
     """
     extractor = RTPPlayExtractor(program_id=254)
-    url = extractor.get_show_image_url(program_id=254)
-    assert url == "https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg"
+    show_name, image_url = extractor.get_show_metadata(program_id=254)
+    assert show_name == "Alta Tensão"
+    assert image_url == "https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg"
 
 
 @patch.object(RTPPlayExtractor, "fetch")
-def test_get_show_image_url_missing(mock_fetch):
-    """Verify None is returned when no og:image tag is present."""
+def test_get_show_metadata_missing(mock_fetch):
+    """Verify (None, None) is returned when og meta tags are absent."""
     mock_fetch.return_value = "<html><head></head></html>"
     extractor = RTPPlayExtractor(program_id=254)
-    url = extractor.get_show_image_url(program_id=254)
-    assert url is None
+    show_name, image_url = extractor.get_show_metadata(program_id=254)
+    assert show_name is None
+    assert image_url is None

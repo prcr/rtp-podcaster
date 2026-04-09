@@ -42,6 +42,10 @@ def test_main_no_new_episodes(mock_extractor_class, mock_generator_class):
         mock_generator_class.return_value = mock_gen_instance
 
         # Return empty master payload array
+        mock_ext_instance.get_show_metadata.return_value = (
+            "Alta Tensão",
+            "https://example.com/image.jpg",
+        )
         mock_ext_instance.get_episode_list.return_value = []
         mock_gen_instance.get_existing_guids.return_value = set()
 

@@ -40,14 +40,19 @@ def main() -> None:
         args.output = f"public/p{program_id}_feed.xml"
 
     extractor = RTPPlayExtractor(program_id=program_id)
-    generator = RSSGenerator(program_id=program_id)
 
-    print("Fetching show image URL...")
-    image_url = extractor.get_show_image_url(program_id=program_id)
+    print("Fetching show metadata...")
+    show_name, image_url = extractor.get_show_metadata(program_id=program_id)
+    if show_name:
+        print(f"Found show name: {show_name}")
+    else:
+        print("Warning: Could not find show name, using default.")
     if image_url:
         print(f"Found show image: {image_url}")
     else:
         print("Warning: Could not find show image URL.")
+
+    generator = RSSGenerator(program_id=program_id, show_name=show_name)
 
     print(f"Checking existing feed at {args.output}...")
     if args.force_refresh:

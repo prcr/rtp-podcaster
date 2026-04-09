@@ -13,11 +13,12 @@ from rtp_podcaster.extractor import Episode
 class RSSGenerator:
     """Generates an RSS 2.0 valid podcast XML stream natively applying podcast tags."""
 
-    SHOW_NAME = "Alta Tensão"
+    DEFAULT_SHOW_NAME = "Alta Tensão"
 
-    def __init__(self, program_id: int):
+    def __init__(self, program_id: int, show_name: Optional[str] = None):
         """Initialize the generator with a specific RTP program catalog ID."""
         self.program_id = program_id
+        self.show_name = show_name or self.DEFAULT_SHOW_NAME
         self.show_url = f"https://www.rtp.pt/play/p{self.program_id}/alta-tensao"
 
     def get_existing_guids(self, feed_path: str) -> set[str]:
@@ -51,9 +52,9 @@ class RSSGenerator:
         fg.load_extension("podcast")
 
         fg.id(self.show_url)
-        fg.title(self.SHOW_NAME)
+        fg.title(self.show_name)
         fg.link(href=self.show_url, rel="alternate")
-        fg.description(f"Podcast feed for {self.SHOW_NAME} automatically generated from RTP Play.")
+        fg.description(f"Podcast feed for {self.show_name} automatically generated from RTP Play.")
         fg.language("pt")
 
         if image_url:

@@ -14,7 +14,10 @@ def test_generator_creation():
     gen = RSSGenerator(program_id=254)
     assert gen.program_id == 254
     assert gen.show_url == "https://www.rtp.pt/play/p254/alta-tensao"
-    assert gen.SHOW_NAME == "Alta Tensão"
+    assert gen.show_name == "Alta Tensão"
+
+    gen_custom = RSSGenerator(program_id=254, show_name="Custom Show")
+    assert gen_custom.show_name == "Custom Show"
 
 
 def test_generator_feed_lifecycle():
