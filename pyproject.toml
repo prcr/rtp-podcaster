@@ -9,6 +9,9 @@ dependencies = [
     "beautifulsoup4>=4.12.0"
 ]
 
+[project.scripts]
+rtp_podcaster = "rtp_podcaster.__main__:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",
