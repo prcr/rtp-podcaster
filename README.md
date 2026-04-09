@@ -2,7 +2,7 @@
 
 Generates an RSS 2.0 podcast feed for the "Alta Tensão" radio show from RTP Play.
 It scrapes the episodes list, retrieves the mp3 for new episodes,
-and updates a local `feed.xml` file.
+and updates a local `public/feed.xml` file by default.
 
 ## Requirements
 
@@ -31,8 +31,20 @@ uv run ruff check .
 
 ## Usage
 
-To execute the scripts inside the virtual environment:
+To execute the script with default settings:
 
 ```bash
 uv run rtp_podcaster
+```
+
+### Options
+
+You can override the default behavior using command-line arguments:
+
+- `--output`: Define the path for the generated feed file (default: `public/feed.xml`).
+- `--max-episodes`: Set the maximum number of episodes to index in the feed (default: `20`).
+
+Example:
+```bash
+uv run rtp_podcaster --output feed.xml --max-episodes 5
 ```

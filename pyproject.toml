@@ -9,12 +9,17 @@ dependencies = [
     "beautifulsoup4>=4.12.0"
 ]
 
+[project.scripts]
+rtp_podcaster = "rtp_podcaster.__main__:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",
     "ruff>=0.3.0",
     "mypy>=1.9.0",
-    "pre-commit>=3.6.0"
+    "pre-commit>=3.6.0",
+    "types-requests",
+    "types-beautifulsoup4"
 ]
 
 [build-system]
