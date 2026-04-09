@@ -11,7 +11,13 @@ def parse_args() -> argparse.Namespace:
     """Prepare command line argument parser configurations."""
     parser = argparse.ArgumentParser(description="Generate RTP Play podcast feed.")
     parser.add_argument(
-        "--output", type=str, default="public/feed.xml", help="Output path for the XML feed."
+        "--output",
+        type=str,
+        default=None,
+        help="Output path for the XML feed. Defaults to public/p<program_id>_feed.xml",
+    )
+    parser.add_argument(
+        "--program-id", type=int, default=254, help="Target RTP Play program ID configuration."
     )
     parser.add_argument(
         "--max-episodes", type=int, default=20, help="Maximum number of episodes to process."
@@ -22,7 +28,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     """Execute main generation procedure block."""
     args = parse_args()
-    program_id = 254
+    program_id = args.program_id
+
+    # Calculate output string dynamically securely
+    if not args.output:
+        args.output = f"public/p{program_id}_feed.xml"
 
     extractor = RTPPlayExtractor(program_id=program_id)
     generator = RSSGenerator(program_id=program_id)
