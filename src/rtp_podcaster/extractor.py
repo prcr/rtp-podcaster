@@ -2,6 +2,7 @@
 
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Optional
 
 import requests
@@ -17,6 +18,42 @@ class Episode:
     date_str: str
     guid: str
     mp3_url: Optional[str] = None
+    pub_date: Optional[datetime] = None
+
+
+def parse_rtp_date(date_str: str) -> Optional[datetime]:
+    """Parse RTP date string like '06 abr. 2026' into a timezone-aware datetime."""
+    months = {
+        "jan": 1,
+        "fev": 2,
+        "mar": 3,
+        "abr": 4,
+        "mai": 5,
+        "jun": 6,
+        "jul": 7,
+        "ago": 8,
+        "set": 9,
+        "out": 10,
+        "nov": 11,
+        "dez": 12,
+    }
+
+    clean_str = date_str.lower().replace(".", "").strip()
+    parts = clean_str.split()
+
+    if len(parts) >= 3:
+        try:
+            day = int(parts[0])
+            month_str = parts[1][:3]
+            month = months.get(month_str)
+            year = int(parts[2])
+
+            if month:
+                return datetime(year, month, day, 0, 0, 0, tzinfo=timezone.utc)
+        except ValueError:
+            pass
+
+    return None
 
 
 class RTPPlayExtractor:
@@ -65,9 +102,16 @@ class RTPPlayExtractor:
 
             title = title_el.get_text(strip=True) if title_el else "Unknown Title"
             date_str = date_el.get_text(strip=True) if date_el else ""
+            pub_date = parse_rtp_date(date_str) if date_str else None
 
             episodes.append(
-                Episode(url=episode_url, title=title, date_str=date_str, guid=episode_url)
+                Episode(
+                    url=episode_url,
+                    title=title,
+                    date_str=date_str,
+                    guid=episode_url,
+                    pub_date=pub_date,
+                )
             )
 
         return episodes

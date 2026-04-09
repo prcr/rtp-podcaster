@@ -4,8 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from datetime import datetime, timezone
 
-from rtp_podcaster.extractor import RTPPlayExtractor
+from rtp_podcaster.extractor import RTPPlayExtractor, parse_rtp_date
 
 
 def test_extractor_init():
@@ -119,3 +120,20 @@ def test_extract_mp3_url_not_found(mock_fetch):
     url = extractor.extract_mp3_url("http://test.url")
 
     assert url is None
+
+
+def test_parse_rtp_date():
+    """Verify Portuguese date structure parsed correctly to UTC timestamp structures."""
+    # Standard format validation parameters
+    valid_date = parse_rtp_date("06 abr. 2026")
+    assert valid_date is not None
+    assert valid_date == datetime(2026, 4, 6, 0, 0, 0, tzinfo=timezone.utc)
+
+    # Capitalized edgecase parameters gracefully handle correctly
+    cap_date = parse_rtp_date("31 JAN 2025")
+    assert cap_date is not None
+    assert cap_date == datetime(2025, 1, 31, 0, 0, 0, tzinfo=timezone.utc)
+
+    # Missing formatting variables safely fallback cleanly
+    invalid = parse_rtp_date("Broken Date Value")
+    assert invalid is None

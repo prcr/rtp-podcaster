@@ -87,7 +87,7 @@ class RSSGenerator:
                         "link": ep.url,
                         "guid": ep.guid,
                         "enclosure_url": ep.mp3_url,
-                        "pubDate": datetime.now(timezone.utc),
+                        "pubDate": ep.pub_date or datetime.now(timezone.utc),
                     },
                 )
 
