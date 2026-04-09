@@ -56,10 +56,10 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Run Pytest (Unit Tests)
+      - name: Run unit tests
         run: uv run pytest -m "not live" --cov=rtp_podcaster
 
-      - name: Run Live Integration Tests
+      - name: Run live integration tests
         run: uv run pytest -m "live" --cov=rtp_podcaster --cov-append
 
       - name: Upload Coverage to Coveralls
