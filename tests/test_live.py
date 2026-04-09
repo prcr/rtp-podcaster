@@ -20,9 +20,9 @@ def test_live_episode_extraction():
     assert first_ep.title is not None
     assert first_ep.title != "Unknown Title"
     assert "https://www.rtp.pt/play" in first_ep.url
-    assert (
-        parse_rtp_date(first_ep.date_str) is not None
-    ), f"Failed to parse date from string: '{first_ep.date_str}'"
+    assert parse_rtp_date(first_ep.date_str) is not None, (
+        f"Failed to parse date from string: '{first_ep.date_str}'"
+    )
 
     # Check structural audio resolutions manually mapped into real endpoints
     mp3_url = extractor.extract_mp3_url(first_ep.url)
