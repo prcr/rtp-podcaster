@@ -1,14 +1,16 @@
 """Generator module for standard RSS 2.0 podcast feeds."""
 
 import os
-import xml.etree.ElementTree as ET
-from email.utils import formatdate
+from datetime import datetime, timezone
+
+import feedparser
+from feedgen.feed import FeedGenerator
 
 from rtp_podcaster.extractor import Episode
 
 
 class RSSGenerator:
-    """Generates an RSS 2.0 valid podcast XML stream."""
+    """Generates an RSS 2.0 valid podcast XML stream natively applying podcast tags."""
 
     SHOW_NAME = "Alta Tensão"
 
@@ -18,105 +20,102 @@ class RSSGenerator:
         self.show_url = f"https://www.rtp.pt/play/p{self.program_id}/alta-tensao"
 
     def get_existing_guids(self, feed_path: str) -> set[str]:
-        """Return a set of episode GUIDs already present in the local feed instance."""
+        """Return a set of episode GUIDs originally present inside the existing feed."""
         if not os.path.exists(feed_path):
             return set()
+
+        guids = set()
         try:
-            tree = ET.parse(feed_path)
-            root = tree.getroot()
-            guids = set()
-            for item in root.findall("./channel/item"):
-                guid_el = item.find("guid")
-                if guid_el is not None and guid_el.text:
-                    guids.add(guid_el.text.strip())
-            return guids
+            parsed = feedparser.parse(feed_path)
+            for entry in parsed.entries:
+                if "id" in entry:
+                    guids.add(entry.id)
+                elif "guid" in entry:
+                    guids.add(entry.guid)
         except Exception as e:
-            print(f"Warning: could not parse existing feed {feed_path}: {e}")
-            return set()
+            print(f"Warning: could not gracefully parse existing feed {feed_path}: {e}")
 
-    def create_new_feed_root(self) -> tuple[ET.Element, ET.Element]:
-        """Bootstrap completely clean standard XML headers and structure."""
-        rss = ET.Element("rss", version="2.0")
-        rss.set("xmlns:itunes", "http://www.itunes.com/dtds/podcast-1.0.dtd")
-
-        channel = ET.SubElement(rss, "channel")
-        title = ET.SubElement(channel, "title")
-        title.text = self.SHOW_NAME
-
-        link = ET.SubElement(channel, "link")
-        link.text = self.show_url
-
-        desc = ET.SubElement(channel, "description")
-        desc.text = f"Podcast feed for {self.SHOW_NAME} automatically generated from RTP Play."
-
-        lang = ET.SubElement(channel, "language")
-        lang.text = "pt"
-
-        return rss, channel
+        return guids
 
     def create_or_update_feed(
-        self, episodes: list[Episode], existing_feed_path: str, max_episodes: int = 20
+        self, new_episodes: list[Episode], existing_feed_path: str, max_episodes: int = 20
     ) -> None:
-        """Update or create the RSS feed file containing validated episode wrappers."""
+        """Parse external file, merge new elements natively, and securely dump to targets."""
+        fg = FeedGenerator()
+        fg.load_extension("podcast")
+
+        fg.id(self.show_url)
+        fg.title(self.SHOW_NAME)
+        fg.link(href=self.show_url, rel="alternate")
+        fg.description(f"Podcast feed for {self.SHOW_NAME} automatically generated from RTP Play.")
+        fg.language("pt")
+
+        all_entries_data = []
+
+        # Read historical episodes first
         if os.path.exists(existing_feed_path):
             try:
-                tree = ET.parse(existing_feed_path)
-                root = tree.getroot()
-                channel = root.find("channel")
-            except Exception:
-                root, channel = self.create_new_feed_root()
-                tree = ET.ElementTree(root)
-        else:
-            root, channel = self.create_new_feed_root()
-            tree = ET.ElementTree(root)
+                parsed = feedparser.parse(existing_feed_path)
+                for entry in parsed.entries:
+                    enc_url = None
+                    if hasattr(entry, "enclosures") and entry.enclosures:
+                        enc_url = entry.enclosures[0].get("href")
 
-        if channel is None:
-            raise RuntimeError("Invalid feed format: no channel element.")
+                    all_entries_data.append(
+                        {
+                            "title": entry.get("title", "Unknown Title"),
+                            "description": entry.get("description", ""),
+                            "link": entry.get("link", ""),
+                            "guid": entry.get("id", ""),
+                            "enclosure_url": enc_url,
+                            "pubDate": entry.get("published", None),
+                        }
+                    )
+            except Exception as e:
+                print(
+                    f"Warning: failed building historical block map from {existing_feed_path}: {e}"
+                )
 
-        # Find insertion position (beneath header metadata)
-        insert_idx = len(channel)
-        for i, child in enumerate(list(channel)):
-            if child.tag == "item":
-                insert_idx = i
-                break
+        # Add new episodes sequentially
+        for idx, ep in enumerate(new_episodes):
+            if ep.mp3_url:
+                all_entries_data.insert(
+                    idx,
+                    {
+                        "title": ep.title,
+                        "description": f"{ep.title} ({ep.date_str})",
+                        "link": ep.url,
+                        "guid": ep.guid,
+                        "enclosure_url": ep.mp3_url,
+                        "pubDate": datetime.now(timezone.utc),
+                    },
+                )
 
-        # Append backwardly to keep newest targets actively at the top pointer
-        for ep in reversed(episodes):
-            if not ep.mp3_url:
+        # Apply maximum historic limitation logic natively
+        all_entries_data = all_entries_data[:max_episodes]
+
+        # Pipe combined datasets securely backward tracking mapping values gracefully
+        for edata in reversed(all_entries_data):
+            if not edata.get("enclosure_url"):
                 continue
 
-            item = ET.Element("item")
+            fe = fg.add_entry()
+            fe.id(str(edata["guid"]))
+            fe.title(str(edata["title"]))
+            fe.description(str(edata["description"]))
+            fe.link(href=str(edata["link"]))
 
-            title = ET.SubElement(item, "title")
-            title.text = ep.title
+            # Explicit extension tag integrations
+            fe.enclosure(edata["enclosure_url"], "0", "audio/mpeg")
 
-            desc = ET.SubElement(item, "description")
-            desc.text = f"{ep.title} ({ep.date_str})"
+            if edata.get("pubDate"):
+                try:
+                    fe.published(edata["pubDate"])
+                except Exception:
+                    pass
 
-            link = ET.SubElement(item, "link")
-            link.text = ep.url
-
-            guid = ET.SubElement(item, "guid")
-            guid.text = ep.guid
-
-            enclosure = ET.SubElement(item, "enclosure")
-            enclosure.set("url", ep.mp3_url)
-            enclosure.set("type", "audio/mpeg")
-
-            pubDate = ET.SubElement(item, "pubDate")
-            pubDate.text = formatdate(timeval=None, localtime=False, usegmt=True)
-
-            channel.insert(insert_idx, item)
-
-        # Enforce history limit parameter
-        items = channel.findall("item")
-        if len(items) > max_episodes:
-            for old_item in items[max_episodes:]:
-                channel.remove(old_item)
-
-        ET.indent(tree, space="  ", level=0)
-
-        # Ensure directory path is initialized before XML compilation
+        # Make sure directory exists securely
         os.makedirs(os.path.dirname(os.path.abspath(existing_feed_path)), exist_ok=True)
 
-        tree.write(existing_feed_path, encoding="UTF-8", xml_declaration=True)
+        # Export mapping natively bypassing ET trees entirely
+        fg.rss_file(existing_feed_path, pretty=True)
