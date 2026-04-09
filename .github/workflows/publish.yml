@@ -37,27 +37,27 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Fetch previous p254_feed.xml
+      - name: Fetch previously published feed
         run: |
           mkdir -p public
           curl -f -s -o public/p254_feed.xml ${{ env.LIVE_FEED_URL }} || echo "No previous feed found, starting fresh."
 
-      - name: Generate Podcast Feed
+      - name: Generate podcast feed
         run: |
           mkdir -p public
           uv run rtp_podcaster
 
-      - name: Upload RSS Feed Artifact
+      - name: Upload RSS feed artifact
         uses: actions/upload-artifact@v4
         with:
           name: podcast-feed
           path: public/p254_feed.xml
           retention-days: 30
 
-      - name: Setup Pages
+      - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload Pages artifact
+      - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'public'
