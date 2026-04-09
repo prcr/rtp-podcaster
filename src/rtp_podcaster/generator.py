@@ -13,13 +13,11 @@ from rtp_podcaster.extractor import Episode, extract_program_id
 class RSSGenerator:
     """Generates an RSS 2.0 valid podcast XML stream natively applying podcast tags."""
 
-    DEFAULT_SHOW_NAME = "Nome Predefinido"
-
     def __init__(self, show_url: str, show_name: Optional[str] = None):
         """Initialize the generator with the full RTP Play show URL."""
         self.show_url = show_url
         self.program_id = extract_program_id(show_url)
-        self.show_name = show_name or self.DEFAULT_SHOW_NAME
+        self.show_name = show_name or f"RTP Play Show #{self.program_id}"
 
     def get_existing_guids(self, feed_path: str) -> set[str]:
         """Return a set of episode GUIDs originally present inside the existing feed."""
