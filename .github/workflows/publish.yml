@@ -45,7 +45,7 @@ jobs:
       - name: Generate podcast feed
         run: |
           mkdir -p public
-          uv run rtp_podcaster
+          uv run rtp-podcaster
 
       - name: Upload RSS feed artifact
         uses: actions/upload-artifact@v4

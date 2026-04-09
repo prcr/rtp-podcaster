@@ -39,7 +39,7 @@ jobs:
         run: |
           mkdir -p public
           # Generate completely cleanly natively dismissing local/remote payloads implicitly
-          uv run rtp_podcaster --force-refresh
+          uv run rtp-podcaster --force-refresh
 
       - name: Upload RSS feed artifact
         uses: actions/upload-artifact@v4

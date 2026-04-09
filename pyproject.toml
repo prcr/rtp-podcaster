@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-rtp_podcaster = "rtp_podcaster.__main__:main"
+rtp-podcaster = "rtp_podcaster.__main__:main"
 
 [dependency-groups]
 dev = [

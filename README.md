@@ -36,7 +36,7 @@ uv run ruff check .
 To execute the script with default settings:
 
 ```bash
-uv run rtp_podcaster
+uv run rtp-podcaster
 ```
 
 ### Options
@@ -50,5 +50,5 @@ You can override the default behavior using command-line arguments:
 
 Example:
 ```bash
-uv run rtp_podcaster --output feed.xml --max-episodes 5
+uv run rtp-podcaster --output feed.xml --max-episodes 5
 ```
