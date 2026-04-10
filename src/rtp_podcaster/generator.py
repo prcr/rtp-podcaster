@@ -12,6 +12,11 @@ from rtp_podcaster.extractor import Episode, extract_program_id
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_AUTHOR = "RTP Play / Antena 3"
+DEFAULT_CATEGORY = "Music"
+DEFAULT_EXPLICIT = "no"
+DEFAULT_TYPE = "episodic"
+
 
 class RSSGenerator:
     """Generates an RSS 2.0 valid podcast XML stream natively applying podcast tags."""
@@ -59,10 +64,10 @@ class RSSGenerator:
         fg.language("pt")
 
         # Enhanced podcast metadata
-        fg.podcast.itunes_author("RTP Play / Antena 3")
-        fg.podcast.itunes_category("Music")
-        fg.podcast.itunes_explicit("no")
-        fg.podcast.itunes_type("episodic")
+        fg.podcast.itunes_author(DEFAULT_AUTHOR)
+        fg.podcast.itunes_category(DEFAULT_CATEGORY)
+        fg.podcast.itunes_explicit(DEFAULT_EXPLICIT)
+        fg.podcast.itunes_type(DEFAULT_TYPE)
 
         if image_url:
             fg.image(image_url)

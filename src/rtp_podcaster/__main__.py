@@ -9,6 +9,10 @@ from concurrent.futures import ThreadPoolExecutor
 from rtp_podcaster.extractor import Episode, RTPPlayExtractor, extract_program_id
 from rtp_podcaster.generator import RSSGenerator
 
+DEFAULT_SHOW_URL = "https://www.rtp.pt/play/p254/alta-tensao"
+DEFAULT_MAX_EPISODES = 128
+OUTPUT_DIR = "public/rtp-podcaster"
+
 
 def parse_args() -> argparse.Namespace:
     """Prepare command line argument parser configurations."""
@@ -22,11 +26,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--show-url",
         type=str,
-        default="https://www.rtp.pt/play/p254/alta-tensao",
+        default=DEFAULT_SHOW_URL,
         help="Full URL of the RTP Play show page.",
     )
     parser.add_argument(
-        "--max-episodes", type=int, default=128, help="Maximum number of episodes to process."
+        "--max-episodes",
+        type=int,
+        default=DEFAULT_MAX_EPISODES,
+        help="Maximum number of episodes to process.",
     )
     parser.add_argument(
         "--force-refresh",
@@ -61,7 +68,7 @@ def main() -> None:
 
     # Calculate output path from the program ID derived from the show URL
     # All feeds are consistently created under the project subdirectory
-    out_dir = "public/rtp-podcaster"
+    out_dir = OUTPUT_DIR
     out_file = args.output or f"p{program_id}_feed.xml"
 
     # Enforce a flat filename structure inside the target directory
