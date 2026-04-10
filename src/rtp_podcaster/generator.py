@@ -1,5 +1,6 @@
 """Generator module for standard RSS 2.0 podcast feeds."""
 
+import logging
 import os
 from datetime import datetime, timezone
 from typing import Optional
@@ -8,6 +9,8 @@ import feedparser
 from feedgen.feed import FeedGenerator
 
 from rtp_podcaster.extractor import Episode, extract_program_id
+
+logger = logging.getLogger(__name__)
 
 
 class RSSGenerator:
@@ -33,7 +36,7 @@ class RSSGenerator:
                 elif "guid" in entry:
                     guids.add(entry.guid)
         except Exception as e:
-            print(f"Warning: could not gracefully parse existing feed {feed_path}: {e}")
+            logger.warning("Could not gracefully parse existing feed %s: %s", feed_path, e)
 
         return guids
 
@@ -80,8 +83,8 @@ class RSSGenerator:
                         }
                     )
             except Exception as e:
-                print(
-                    f"Warning: failed building historical block map from {existing_feed_path}: {e}"
+                logger.warning(
+                    "Failed building historical block map from %s: %s", existing_feed_path, e
                 )
 
         # Add new episodes sequentially

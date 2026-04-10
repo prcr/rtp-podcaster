@@ -1,5 +1,6 @@
 """Extractor module for RTP Play episodes."""
 
+import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -8,6 +9,8 @@ from urllib.parse import urlparse, urlunparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -123,8 +126,8 @@ class RTPPlayExtractor:
             pub_date = parse_rtp_date(date_str) if date_str else None
 
             if not pub_date:
-                print(
-                    f"Warning: Failed to parse date string '{date_str}', falling back to current time."
+                logger.warning(
+                    "Failed to parse date string '%s', falling back to current time.", date_str
                 )
                 pub_date = datetime.now(timezone.utc)
 
