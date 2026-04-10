@@ -9,6 +9,8 @@ from urllib.parse import urlparse, urlunparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 logger = logging.getLogger(__name__)
 
@@ -92,8 +94,17 @@ class RTPPlayExtractor:
         self.program_id = extract_program_id(show_url)
         self.session = requests.Session()
         self.session.headers.update(self.HEADERS)
-        # Force HTTPAdapter standard networking config to prevent ipv6 environment hangs
-        self.session.mount("https://", requests.adapters.HTTPAdapter())
+
+        # Configure retry strategy
+        retry_strategy = Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET", "HEAD", "OPTIONS"],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
 
     def fetch(self, url: str) -> str:
         """Fetch contents via internal session with robust timeout bindings."""
