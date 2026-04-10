@@ -1,4 +1,4 @@
-name: Rebuild Podcast Feed Manually
+name: Force rebuild podcast feed
 
 on:
   workflow_dispatch:

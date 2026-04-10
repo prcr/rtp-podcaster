@@ -1,8 +1,10 @@
-name: Publish to GitHub Pages
+name: Publish podcast feed
 
 on:
   push:
     branches: ["main"]
+  schedule:
+    - cron: "45 5 * * *"
   workflow_dispatch:
 
 env:
