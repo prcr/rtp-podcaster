@@ -32,7 +32,7 @@ def test_live_episode_extraction():
     assert ".mp3" in mp3_url.lower()
 
     # Check show name and image URL are fetched cleanly from og: meta tags
-    show_name, image_url = extractor.get_show_metadata(program_id=254)
+    show_name, image_url = extractor.get_show_metadata()
     assert show_name is not None, "Could not find show name in og:title meta tag."
     assert len(show_name) > 0
     assert image_url is not None, "Could not find show image URL in og:image meta tag."
