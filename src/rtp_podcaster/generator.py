@@ -58,6 +58,12 @@ class RSSGenerator:
         fg.description(f"Podcast feed for {self.show_name} automatically generated from RTP Play.")
         fg.language("pt")
 
+        # Enhanced podcast metadata
+        fg.podcast.itunes_author("RTP Play / Antena 3")
+        fg.podcast.itunes_category("Music")
+        fg.podcast.itunes_explicit("no")
+        fg.podcast.itunes_type("episodic")
+
         if image_url:
             fg.image(image_url)
 
