@@ -93,39 +93,59 @@ def test_get_episode_list(mock_fetch):
 
 
 @patch.object(RTPPlayExtractor, "fetch")
-def test_extract_mp3_url_primary_method(mock_fetch):
-    """Try grabbing audio payloads off standard regex scripts mapping."""
-    mock_html = '<html><script>var block; f = "https://cdn.rtp.pt/test.mp3"; </script></html>'
+def test_extract_episode_metadata_priority(mock_fetch):
+    """Verify description from class is used, and meta tag is ignored."""
+    mock_html = """
+    <html>
+        <head>
+            <meta name="description" content="Meta decription that should be ignored." />
+        </head>
+        <body>
+            <p class="vod-description">Full setlist description from class.</p>
+        </body>
+        <script>f = "https://cdn.rtp.pt/test.mp3";</script>
+    </html>
+    """
     mock_fetch.return_value = mock_html
 
     extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p1/test-show")
-    url = extractor.extract_mp3_url("http://test.url")
+    mp3_url, description = extractor.extract_episode_metadata("http://test.url")
 
-    assert url == "https://cdn.rtp.pt/test.mp3"
+    assert mp3_url == "https://cdn.rtp.pt/test.mp3"
+    assert description == "Full setlist description from class."
 
 
 @patch.object(RTPPlayExtractor, "fetch")
-def test_extract_mp3_url_fallback_method(mock_fetch):
-    """Test backup BS4 JSON block scraping fallback behavior."""
-    mock_html = '<html><script>{"file": "https://streaming.rtp.pt/fallback.mp3"}</script></html>'
+def test_extract_episode_metadata_fallback(mock_fetch):
+    """Verify fallback methods for both MP3 (JSON) and description (class) work."""
+    mock_html = """
+    <html>
+        <body>
+            <p class="vod-description">Description from class.</p>
+            <script>{"file": "https://streaming.rtp.pt/fallback.mp3"}</script>
+        </body>
+    </html>
+    """
     mock_fetch.return_value = mock_html
 
     extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p1/test-show")
-    url = extractor.extract_mp3_url("http://test.url")
+    mp3_url, description = extractor.extract_episode_metadata("http://test.url")
 
-    assert url == "https://streaming.rtp.pt/fallback.mp3"
+    assert mp3_url == "https://streaming.rtp.pt/fallback.mp3"
+    assert description == "Description from class."
 
 
 @patch.object(RTPPlayExtractor, "fetch")
-def test_extract_mp3_url_not_found(mock_fetch):
-    """Test behavior if no mp3 string structure matches."""
-    mock_html = "<html><body>No files here!</body></html>"
+def test_extract_episode_metadata_not_found(mock_fetch):
+    """Test behavior if no metadata matches."""
+    mock_html = "<html><body>No data here!</body></html>"
     mock_fetch.return_value = mock_html
 
     extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p1/test-show")
-    url = extractor.extract_mp3_url("http://test.url")
+    mp3_url, description = extractor.extract_episode_metadata("http://test.url")
 
-    assert url is None
+    assert mp3_url is None
+    assert description is None
 
 
 def test_parse_rtp_date():
