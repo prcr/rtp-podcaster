@@ -7,7 +7,7 @@ on:
 
 env:
   # The live URL of the published feed. Used to fetch history during generation.
-  LIVE_FEED_URL: "https://dev.diffraction.pt/p254_feed.xml"
+  LIVE_FEED_URL: "https://dev.diffraction.pt/rtp-podcaster/p254_feed.xml"
 
 permissions:
   contents: read
@@ -39,19 +39,19 @@ jobs:
 
       - name: Fetch previously published feed
         run: |
-          mkdir -p public
-          curl -f -s -o public/p254_feed.xml ${{ env.LIVE_FEED_URL }} || echo "No previous feed found, starting fresh."
+          mkdir -p public/rtp-podcaster
+          curl -f -s -o public/rtp-podcaster/p254_feed.xml ${{ env.LIVE_FEED_URL }} || echo "No previous feed found, starting fresh."
 
       - name: Generate podcast feed
         run: |
-          mkdir -p public
-          uv run rtp-podcaster
+          mkdir -p public/rtp-podcaster
+          uv run rtp-podcaster --output p254_feed.xml
 
       - name: Upload RSS feed artifact
         uses: actions/upload-artifact@v4
         with:
           name: podcast-feed
-          path: public/p254_feed.xml
+          path: public/rtp-podcaster/p254_feed.xml
           retention-days: 30
 
       - name: Setup GitHub Pages
@@ -65,7 +65,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}p254_feed.xml
+      url: ${{ steps.deployment.outputs.page_url }}rtp-podcaster/p254_feed.xml
     runs-on: ubuntu-latest
     needs: build
     steps:
