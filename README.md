@@ -4,7 +4,7 @@
 
 Generates an RSS 2.0 podcast feed for RTP Play shows.
 It scrapes the episodes list, retrieves the mp3 for new episodes,
-and updates a local `public/p<program_id>_feed.xml` file by default (the program ID is extracted from the show URL).
+and updates a `p<program_id>_feed.xml` file.
 
 ## Requirements
 
@@ -43,12 +43,12 @@ uv run rtp-podcaster
 
 You can override the default behavior using command-line arguments:
 
-- `--output`: Define the path for the generated feed file (default computes to `public/p<program_id>_feed.xml`).
+- `--output`: Define the filename for the generated feed (default: `p<program_id>_feed.xml`). All feeds are saved within the `public/rtp-podcaster/` directory.
 - `--show-url`: Full URL of the RTP Play show page (default: `https://www.rtp.pt/play/p254/alta-tensao`). The program ID is extracted from this URL.
 - `--max-episodes`: Set the maximum number of episodes to index in the feed (default: `128`).
 - `--force-refresh`: Disregard the historical feed metadata and rebuild the entire feed from scratch.
 
 Example:
 ```bash
-uv run rtp-podcaster --output feed.xml --max-episodes 5
+uv run rtp-podcaster --output custom_feed.xml --max-episodes 5
 ```

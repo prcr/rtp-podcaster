@@ -1,6 +1,7 @@
 """Main entry point."""
 
 import argparse
+import os
 import sys
 
 from rtp_podcaster.extractor import RTPPlayExtractor, extract_program_id
@@ -14,7 +15,7 @@ def parse_args() -> argparse.Namespace:
         "--output",
         type=str,
         default=None,
-        help="Output path for the XML feed. Defaults to public/p<program_id>_feed.xml",
+        help="Output filename for the XML feed. Defaults to p<program_id>_feed.xml (always placed in public/rtp-podcaster/)",
     )
     parser.add_argument(
         "--show-url",
@@ -40,8 +41,12 @@ def main() -> None:
     program_id = extract_program_id(show_url)
 
     # Calculate output path from the program ID derived from the show URL
-    if not args.output:
-        args.output = f"public/p{program_id}_feed.xml"
+    # All feeds are consistently created under the project subdirectory
+    out_dir = "public/rtp-podcaster"
+    out_file = args.output or f"p{program_id}_feed.xml"
+
+    # Enforce a flat filename structure inside the target directory
+    args.output = os.path.join(out_dir, os.path.basename(out_file))
 
     extractor = RTPPlayExtractor(show_url=show_url)
 
