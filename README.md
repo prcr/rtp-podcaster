@@ -45,7 +45,7 @@ You can override the default behavior using command-line arguments:
 
 - `--output`: Define the path for the generated feed file (default computes to `public/p<program_id>_feed.xml`).
 - `--show-url`: Full URL of the RTP Play show page (default: `https://www.rtp.pt/play/p254/alta-tensao`). The program ID is extracted from this URL.
-- `--max-episodes`: Set the maximum number of episodes to index in the feed (default: `20`).
+- `--max-episodes`: Set the maximum number of episodes to index in the feed (default: `128`).
 - `--force-refresh`: Disregard the historical feed metadata and rebuild the entire feed from scratch.
 
 Example:

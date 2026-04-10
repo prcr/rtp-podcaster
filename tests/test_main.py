@@ -24,7 +24,7 @@ def test_parse_args_defaults():
         parsed = parse_args()
         assert parsed.output is None
         assert parsed.show_url == "https://www.rtp.pt/play/p254/alta-tensao"
-        assert parsed.max_episodes == 20
+        assert parsed.max_episodes == 128
         assert parsed.force_refresh is False
 
 
@@ -54,7 +54,7 @@ def test_main_no_new_episodes(mock_extractor_class, mock_generator_class):
 
         # Verification metrics
         assert exc.value.code == 0
-        mock_ext_instance.get_episode_list.assert_called_once_with(max_episodes=20)
+        mock_ext_instance.get_episode_list.assert_called_once_with(max_episodes=128)
         # Verify execution terminates gracefully before executing structural maps
         mock_gen_instance.create_or_update_feed.assert_not_called()
         mock_ext_instance.extract_mp3_url.assert_not_called()

@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
         help="Full URL of the RTP Play show page.",
     )
     parser.add_argument(
-        "--max-episodes", type=int, default=20, help="Maximum number of episodes to process."
+        "--max-episodes", type=int, default=128, help="Maximum number of episodes to process."
     )
     parser.add_argument(
         "--force-refresh",

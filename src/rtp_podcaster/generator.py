@@ -41,7 +41,7 @@ class RSSGenerator:
         self,
         new_episodes: list[Episode],
         existing_feed_path: str,
-        max_episodes: int = 20,
+        max_episodes: int = 128,
         force_refresh: bool = False,
         image_url: Optional[str] = None,
     ) -> None:
