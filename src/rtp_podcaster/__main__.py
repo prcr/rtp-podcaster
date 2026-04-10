@@ -3,7 +3,7 @@
 import argparse
 import sys
 
-from rtp_podcaster.extractor import RTPPlayExtractor
+from rtp_podcaster.extractor import RTPPlayExtractor, extract_program_id
 from rtp_podcaster.generator import RSSGenerator
 
 
@@ -17,10 +17,18 @@ def parse_args() -> argparse.Namespace:
         help="Output path for the XML feed. Defaults to public/p<program_id>_feed.xml",
     )
     parser.add_argument(
-        "--program-id", type=int, default=254, help="Target RTP Play program ID configuration."
+        "--show-url",
+        type=str,
+        default="https://www.rtp.pt/play/p254/alta-tensao",
+        help="Full URL of the RTP Play show page.",
     )
     parser.add_argument(
-        "--max-episodes", type=int, default=20, help="Maximum number of episodes to process."
+        "--max-episodes", type=int, default=128, help="Maximum number of episodes to process."
+    )
+    parser.add_argument(
+        "--force-refresh",
+        action="store_true",
+        help="Disregard the historical feed metadata and seamlessly rebuild the entire feed natively.",
     )
     return parser.parse_args()
 
@@ -28,17 +36,35 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     """Execute main generation procedure block."""
     args = parse_args()
-    program_id = args.program_id
+    show_url = args.show_url
+    program_id = extract_program_id(show_url)
 
-    # Calculate output string dynamically securely
+    # Calculate output path from the program ID derived from the show URL
     if not args.output:
         args.output = f"public/p{program_id}_feed.xml"
 
-    extractor = RTPPlayExtractor(program_id=program_id)
-    generator = RSSGenerator(program_id=program_id)
+    extractor = RTPPlayExtractor(show_url=show_url)
+
+    print("Fetching show metadata...")
+    show_name, image_url = extractor.get_show_metadata()
+    if show_name:
+        print(f"Found show name: {show_name}")
+    else:
+        print("Warning: Could not find show name, using default.")
+    if image_url:
+        print(f"Found show image: {image_url}")
+    else:
+        print("Warning: Could not find show image URL.")
+
+    generator = RSSGenerator(show_url=show_url, show_name=show_name)
 
     print(f"Checking existing feed at {args.output}...")
-    guids = generator.get_existing_guids(args.output)
+    if args.force_refresh:
+        print("Flag --force-refresh active: Rebuilding entirely from scratch.")
+        guids = set()
+    else:
+        guids = generator.get_existing_guids(args.output)
+
     print(f"Loaded {len(guids)} known episodes.")
 
     print("Fetching master list of recent episodes from RTP Play...")
@@ -64,7 +90,11 @@ def main() -> None:
 
     # Build and write xml wrapper natively
     generator.create_or_update_feed(
-        new_episodes, existing_feed_path=args.output, max_episodes=args.max_episodes
+        new_episodes,
+        existing_feed_path=args.output,
+        max_episodes=args.max_episodes,
+        force_refresh=args.force_refresh,
+        image_url=image_url,
     )
 
     print(f"Successfully generated new feed payload into {args.output}!")

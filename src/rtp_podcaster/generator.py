@@ -2,22 +2,22 @@
 
 import os
 from datetime import datetime, timezone
+from typing import Optional
 
 import feedparser
 from feedgen.feed import FeedGenerator
 
-from rtp_podcaster.extractor import Episode
+from rtp_podcaster.extractor import Episode, extract_program_id
 
 
 class RSSGenerator:
     """Generates an RSS 2.0 valid podcast XML stream natively applying podcast tags."""
 
-    SHOW_NAME = "Alta Tensão"
-
-    def __init__(self, program_id: int):
-        """Initialize the generator with a specific RTP program catalog ID."""
-        self.program_id = program_id
-        self.show_url = f"https://www.rtp.pt/play/p{self.program_id}/alta-tensao"
+    def __init__(self, show_url: str, show_name: Optional[str] = None):
+        """Initialize the generator with the full RTP Play show URL."""
+        self.show_url = show_url
+        self.program_id = extract_program_id(show_url)
+        self.show_name = show_name or f"RTP Play Show #{self.program_id}"
 
     def get_existing_guids(self, feed_path: str) -> set[str]:
         """Return a set of episode GUIDs originally present inside the existing feed."""
@@ -38,22 +38,30 @@ class RSSGenerator:
         return guids
 
     def create_or_update_feed(
-        self, new_episodes: list[Episode], existing_feed_path: str, max_episodes: int = 20
+        self,
+        new_episodes: list[Episode],
+        existing_feed_path: str,
+        max_episodes: int = 128,
+        force_refresh: bool = False,
+        image_url: Optional[str] = None,
     ) -> None:
         """Parse external file, merge new elements natively, and securely dump to targets."""
         fg = FeedGenerator()
         fg.load_extension("podcast")
 
         fg.id(self.show_url)
-        fg.title(self.SHOW_NAME)
+        fg.title(self.show_name)
         fg.link(href=self.show_url, rel="alternate")
-        fg.description(f"Podcast feed for {self.SHOW_NAME} automatically generated from RTP Play.")
+        fg.description(f"Podcast feed for {self.show_name} automatically generated from RTP Play.")
         fg.language("pt")
+
+        if image_url:
+            fg.image(image_url)
 
         all_entries_data = []
 
         # Read historical episodes first
-        if os.path.exists(existing_feed_path):
+        if not force_refresh and os.path.exists(existing_feed_path):
             try:
                 parsed = feedparser.parse(existing_feed_path)
                 for entry in parsed.entries:
@@ -83,11 +91,12 @@ class RSSGenerator:
                     idx,
                     {
                         "title": ep.title,
-                        "description": f"{ep.title} ({ep.date_str})",
+                        "description": ep.title,
                         "link": ep.url,
                         "guid": ep.guid,
                         "enclosure_url": ep.mp3_url,
-                        "pubDate": datetime.now(timezone.utc),
+                        "pubDate": ep.pub_date or datetime.now(timezone.utc),
+                        "image_url": image_url,
                     },
                 )
 
@@ -107,6 +116,9 @@ class RSSGenerator:
 
             # Explicit extension tag integrations
             fe.enclosure(edata["enclosure_url"], "0", "audio/mpeg")
+
+            if edata.get("image_url"):
+                fe.podcast.itunes_image(edata["image_url"])
 
             if edata.get("pubDate"):
                 try:

@@ -1,12 +1,10 @@
-name: Publish to GitHub Pages
+name: Rebuild Podcast Feed Manually
 
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
 
 env:
-  # The live URL of the published feed. Used to fetch history during generation.
+  # The live URL of the published feed. Used to maintain structure parameters natively.
   LIVE_FEED_URL: "https://dev.diffraction.pt/p254_feed.xml"
 
 permissions:
@@ -37,15 +35,11 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Fetch previously published feed
+      - name: Generate podcast feed explicitly cleanly
         run: |
           mkdir -p public
-          curl -f -s -o public/p254_feed.xml ${{ env.LIVE_FEED_URL }} || echo "No previous feed found, starting fresh."
-
-      - name: Generate podcast feed
-        run: |
-          mkdir -p public
-          uv run rtp-podcaster
+          # Generate completely cleanly natively dismissing local/remote payloads implicitly
+          uv run rtp-podcaster --force-refresh
 
       - name: Upload RSS feed artifact
         uses: actions/upload-artifact@v4

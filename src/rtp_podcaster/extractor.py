@@ -2,10 +2,12 @@
 
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import urlparse, urlunparse
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 
 @dataclass
@@ -17,6 +19,57 @@ class Episode:
     date_str: str
     guid: str
     mp3_url: Optional[str] = None
+    pub_date: Optional[datetime] = None
+
+
+def parse_rtp_date(date_str: str) -> Optional[datetime]:
+    """Parse RTP date string like '06 abr. 2026' into a timezone-aware datetime."""
+    months = {
+        "jan": 1,
+        "fev": 2,
+        "mar": 3,
+        "abr": 4,
+        "mai": 5,
+        "jun": 6,
+        "jul": 7,
+        "ago": 8,
+        "set": 9,
+        "out": 10,
+        "nov": 11,
+        "dez": 12,
+    }
+
+    # Treat all spaces and periods as explicit delimiters
+    clean_str = date_str.lower().replace(".", " ").strip()
+    parts = clean_str.split()
+
+    if len(parts) >= 3:
+        try:
+            day = int(parts[0])
+            month_str = parts[1]
+            month = months.get(month_str)
+            year = int(parts[2])
+
+            if month:
+                return datetime(year, month, day, 0, 0, 0, tzinfo=timezone.utc)
+        except ValueError:
+            pass
+
+    return None
+
+
+def strip_query_string(url: str) -> str:
+    """Remove any query string from a URL, returning only the bare path."""
+    parsed = urlparse(url)
+    return urlunparse(parsed._replace(query="", fragment=""))
+
+
+def extract_program_id(show_url: str) -> int:
+    """Extract the numeric program ID from an RTP Play show URL."""
+    match = re.search(r"/p(\d+)/", show_url)
+    if not match:
+        raise ValueError(f"Could not extract program ID from URL: {show_url}")
+    return int(match.group(1))
 
 
 class RTPPlayExtractor:
@@ -29,9 +82,10 @@ class RTPPlayExtractor:
         "Cookie": "rtp_cookie_parental=0; rtp_privacy=666; rtp_cookie_privacy=permit 1,2,3,4;",
     }
 
-    def __init__(self, program_id: int):
-        """Initialize the extractor with a specific RTP program catalog ID."""
-        self.program_id = program_id
+    def __init__(self, show_url: str):
+        """Initialize the extractor with the full RTP Play show URL."""
+        self.show_url = show_url
+        self.program_id = extract_program_id(show_url)
         self.session = requests.Session()
         self.session.headers.update(self.HEADERS)
         # Force HTTPAdapter standard networking config to prevent ipv6 environment hangs
@@ -65,12 +119,48 @@ class RTPPlayExtractor:
 
             title = title_el.get_text(strip=True) if title_el else "Unknown Title"
             date_str = date_el.get_text(strip=True) if date_el else ""
+            pub_date = parse_rtp_date(date_str) if date_str else None
+
+            if not pub_date:
+                print(
+                    f"Warning: Failed to parse date string '{date_str}', falling back to current time."
+                )
+                pub_date = datetime.now(timezone.utc)
 
             episodes.append(
-                Episode(url=episode_url, title=title, date_str=date_str, guid=episode_url)
+                Episode(
+                    url=episode_url,
+                    title=title,
+                    date_str=date_str,
+                    guid=episode_url,
+                    pub_date=pub_date,
+                )
             )
 
         return episodes
+
+    def get_show_metadata(self) -> tuple[Optional[str], Optional[str]]:
+        """Fetch the show page and return (show_name, image_url) from og: meta tags."""
+        html = self.fetch(self.show_url)
+        soup = BeautifulSoup(html, "html.parser")
+
+        show_name: Optional[str] = None
+        og_title = soup.find("meta", property="og:title")
+        if isinstance(og_title, Tag) and og_title.get("content"):
+            raw_title = str(og_title["content"]).strip()
+            # Strip common platform suffixes like " - RTP Play" or " | RTP"
+            for sep in (" - ", " | "):
+                if sep in raw_title:
+                    raw_title = raw_title.split(sep)[0].strip()
+                    break
+            show_name = raw_title
+
+        image_url: Optional[str] = None
+        og_image = soup.find("meta", property="og:image")
+        if isinstance(og_image, Tag) and og_image.get("content"):
+            image_url = strip_query_string(str(og_image["content"]))
+
+        return show_name, image_url
 
     def extract_mp3_url(self, episode_url: str) -> Optional[str]:
         """Parse an episode web page explicitly searching for the embedded MP3 payload."""

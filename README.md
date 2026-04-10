@@ -2,9 +2,9 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/prcr/rtp-podcaster/badge.svg?branch=main)](https://coveralls.io/github/prcr/rtp-podcaster?branch=main)
 
-Generates an RSS 2.0 podcast feed for the "Alta Tensão" radio show from RTP Play (program ID 254 by default).
+Generates an RSS 2.0 podcast feed for RTP Play shows.
 It scrapes the episodes list, retrieves the mp3 for new episodes,
-and updates a local `public/p254_feed.xml` file by default (naming tracks program ID).
+and updates a local `public/p<program_id>_feed.xml` file by default (the program ID is extracted from the show URL).
 
 ## Requirements
 
@@ -36,7 +36,7 @@ uv run ruff check .
 To execute the script with default settings:
 
 ```bash
-uv run rtp_podcaster
+uv run rtp-podcaster
 ```
 
 ### Options
@@ -44,10 +44,11 @@ uv run rtp_podcaster
 You can override the default behavior using command-line arguments:
 
 - `--output`: Define the path for the generated feed file (default computes to `public/p<program_id>_feed.xml`).
-- `--program-id`: Set the target RTP Play program ID to catalog (default: `254`).
-- `--max-episodes`: Set the maximum number of episodes to index in the feed (default: `20`).
+- `--show-url`: Full URL of the RTP Play show page (default: `https://www.rtp.pt/play/p254/alta-tensao`). The program ID is extracted from this URL.
+- `--max-episodes`: Set the maximum number of episodes to index in the feed (default: `128`).
+- `--force-refresh`: Disregard the historical feed metadata and rebuild the entire feed from scratch.
 
 Example:
 ```bash
-uv run rtp_podcaster --output feed.xml --max-episodes 5
+uv run rtp-podcaster --output feed.xml --max-episodes 5
 ```

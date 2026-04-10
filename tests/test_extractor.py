@@ -4,14 +4,21 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from datetime import datetime, timezone
 
-from rtp_podcaster.extractor import RTPPlayExtractor
+from rtp_podcaster.extractor import (
+    RTPPlayExtractor,
+    extract_program_id,
+    parse_rtp_date,
+    strip_query_string,
+)
 
 
 def test_extractor_init():
     """Verify initialization parameters map securely."""
-    extractor = RTPPlayExtractor(program_id=999)
+    extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p999/test-show")
     assert extractor.program_id == 999
+    assert extractor.show_url == "https://www.rtp.pt/play/p999/test-show"
     assert isinstance(extractor.session, requests.Session)
     assert extractor.session.headers["User-Agent"] == RTPPlayExtractor.HEADERS["User-Agent"]
 
@@ -24,7 +31,7 @@ def test_fetch_success(mock_get):
     mock_response.raise_for_status.return_value = None
     mock_get.return_value = mock_response
 
-    extractor = RTPPlayExtractor(program_id=1)
+    extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p1/test-show")
     result = extractor.fetch("http://test.url")
 
     mock_get.assert_called_once_with("http://test.url", timeout=15)
@@ -39,7 +46,7 @@ def test_fetch_failure(mock_get):
     mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Not Found")
     mock_get.return_value = mock_response
 
-    extractor = RTPPlayExtractor(program_id=1)
+    extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p1/test-show")
 
     with pytest.raises(requests.exceptions.HTTPError, match="404 Not Found"):
         extractor.fetch("http://test.url")
@@ -70,7 +77,7 @@ def test_get_episode_list(mock_fetch):
     """
     mock_fetch.return_value = raw_html
 
-    extractor = RTPPlayExtractor(program_id=123)
+    extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p123/test-show")
     episodes = extractor.get_episode_list(max_episodes=2)
 
     assert mock_fetch.called
@@ -91,7 +98,7 @@ def test_extract_mp3_url_primary_method(mock_fetch):
     mock_html = '<html><script>var block; f = "https://cdn.rtp.pt/test.mp3"; </script></html>'
     mock_fetch.return_value = mock_html
 
-    extractor = RTPPlayExtractor(program_id=1)
+    extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p1/test-show")
     url = extractor.extract_mp3_url("http://test.url")
 
     assert url == "https://cdn.rtp.pt/test.mp3"
@@ -103,7 +110,7 @@ def test_extract_mp3_url_fallback_method(mock_fetch):
     mock_html = '<html><script>{"file": "https://streaming.rtp.pt/fallback.mp3"}</script></html>'
     mock_fetch.return_value = mock_html
 
-    extractor = RTPPlayExtractor(program_id=1)
+    extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p1/test-show")
     url = extractor.extract_mp3_url("http://test.url")
 
     assert url == "https://streaming.rtp.pt/fallback.mp3"
@@ -115,7 +122,71 @@ def test_extract_mp3_url_not_found(mock_fetch):
     mock_html = "<html><body>No files here!</body></html>"
     mock_fetch.return_value = mock_html
 
-    extractor = RTPPlayExtractor(program_id=1)
+    extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p1/test-show")
     url = extractor.extract_mp3_url("http://test.url")
 
     assert url is None
+
+
+def test_parse_rtp_date():
+    """Verify Portuguese date structure parsed correctly to UTC timestamp structures."""
+    # Standard format validation parameters
+    valid_date = parse_rtp_date("06 abr. 2026")
+    assert valid_date is not None
+    assert valid_date == datetime(2026, 4, 6, 0, 0, 0, tzinfo=timezone.utc)
+
+    # Capitalized edgecase parameters gracefully handle correctly
+    cap_date = parse_rtp_date("31 JAN 2025")
+    assert cap_date is not None
+    assert cap_date == datetime(2025, 1, 31, 0, 0, 0, tzinfo=timezone.utc)
+
+    # Missing formatting variables safely fallback cleanly
+    invalid = parse_rtp_date("Broken Date Value")
+    assert invalid is None
+
+
+def test_strip_query_string():
+    """Verify query strings and fragments are removed from URLs correctly."""
+    assert (
+        strip_query_string("https://cdn.rtp.pt/image.jpg?w=100&h=100")
+        == "https://cdn.rtp.pt/image.jpg"
+    )
+    assert strip_query_string("https://cdn.rtp.pt/image.jpg") == "https://cdn.rtp.pt/image.jpg"
+    assert (
+        strip_query_string("https://cdn.rtp.pt/image.jpg#anchor") == "https://cdn.rtp.pt/image.jpg"
+    )
+
+
+def test_extract_program_id():
+    """Verify program ID is correctly extracted from RTP Play show URLs."""
+    assert extract_program_id("https://www.rtp.pt/play/p254/alta-tensao") == 254
+    assert extract_program_id("https://www.rtp.pt/play/p999/outro-programa") == 999
+    with pytest.raises(ValueError):
+        extract_program_id("https://www.rtp.pt/play/invalid-url")
+
+
+@patch.object(RTPPlayExtractor, "fetch")
+def test_get_show_metadata(mock_fetch):
+    """Verify og:title and og:image meta tags are extracted and transformed correctly."""
+    mock_fetch.return_value = """
+    <html>
+        <head>
+            <meta property="og:title" content="Alta Tensão - RTP Play" />
+            <meta property="og:image" content="https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg?w=200" />
+        </head>
+    </html>
+    """
+    extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p254/alta-tensao")
+    show_name, image_url = extractor.get_show_metadata()
+    assert show_name == "Alta Tensão"
+    assert image_url == "https://cdn-images.rtp.pt/EPG/radio/imagens/1068_12880_9537.jpg"
+
+
+@patch.object(RTPPlayExtractor, "fetch")
+def test_get_show_metadata_missing(mock_fetch):
+    """Verify (None, None) is returned when og meta tags are absent."""
+    mock_fetch.return_value = "<html><head></head></html>"
+    extractor = RTPPlayExtractor(show_url="https://www.rtp.pt/play/p254/alta-tensao")
+    show_name, image_url = extractor.get_show_metadata()
+    assert show_name is None
+    assert image_url is None
