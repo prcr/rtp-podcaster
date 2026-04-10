@@ -4,8 +4,9 @@ import argparse
 import logging
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
-from rtp_podcaster.extractor import RTPPlayExtractor, extract_program_id
+from rtp_podcaster.extractor import Episode, RTPPlayExtractor, extract_program_id
 from rtp_podcaster.generator import RSSGenerator
 
 
@@ -33,6 +34,20 @@ def parse_args() -> argparse.Namespace:
         help="Disregard the historical feed metadata and seamlessly rebuild the entire feed natively.",
     )
     return parser.parse_args()
+
+
+def process_episode_metadata(
+    ep: Episode, extractor: RTPPlayExtractor, logger: logging.Logger
+) -> None:
+    """Worker function to fetch metadata for a single episode."""
+    mp3, desc = extractor.extract_episode_metadata(ep.url)
+    if mp3:
+        ep.mp3_url = mp3
+    else:
+        logger.warning("Could not locate mp3 URL for '%s' at %s", ep.title, ep.url)
+
+    if desc:
+        ep.description = desc
 
 
 def main() -> None:
@@ -90,15 +105,12 @@ def main() -> None:
         sys.exit(0)
 
     logger.info("Processing %d new episodes...", len(new_episodes))
-    for ep in new_episodes:
-        mp3, desc = extractor.extract_episode_metadata(ep.url)
-        if mp3:
-            ep.mp3_url = mp3
-        else:
-            logger.warning("Could not locate mp3 URL for '%s' at %s", ep.title, ep.url)
 
-        if desc:
-            ep.description = desc
+    # Process episodes in parallel to speed up metadata extraction
+    # Using 4 workers to balance speed and server respect
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        for ep in new_episodes:
+            executor.submit(process_episode_metadata, ep, extractor, logger)
 
     # Build and write xml wrapper natively
     generator.create_or_update_feed(
