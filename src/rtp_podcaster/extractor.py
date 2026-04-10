@@ -189,24 +189,11 @@ class RTPPlayExtractor:
 
         # 2. Extract description (Playlist / Setlist)
         description: Optional[str] = None
-        # Priority 1: Specific description classes (usually contains the full setlist)
+        # Look for specific description classes (usually contains the full setlist)
         for cls in ["vod-description", "sinopse-text", "podcast-description"]:
             desc_el = soup.find(class_=cls)
             if desc_el:
                 description = desc_el.get_text(strip=True)
                 break
-
-        # Priority 2: Meta description (backup, but often truncated)
-        if not description:
-            meta_desc = soup.find("meta", attrs={"name": "description"})
-            if isinstance(meta_desc, Tag) and meta_desc.get("content"):
-                raw_desc = str(meta_desc["content"]).strip()
-                # RTP often puts a summary like "Title - Description", try to extract only the description
-                if " - " in raw_desc:
-                    parts = raw_desc.split(" - ", 1)
-                    if len(parts) > 1:
-                        description = parts[1].strip()
-                else:
-                    description = raw_desc
 
         return mp3_url, description

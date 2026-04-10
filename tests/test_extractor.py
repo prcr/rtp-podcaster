@@ -94,11 +94,11 @@ def test_get_episode_list(mock_fetch):
 
 @patch.object(RTPPlayExtractor, "fetch")
 def test_extract_episode_metadata_priority(mock_fetch):
-    """Verify description from class (full) is preferred over meta (often truncated)."""
+    """Verify description from class is used, and meta tag is ignored."""
     mock_html = """
     <html>
         <head>
-            <meta name="description" content="Truncated desc..." />
+            <meta name="description" content="Meta decription that should be ignored." />
         </head>
         <body>
             <p class="vod-description">Full setlist description from class.</p>
