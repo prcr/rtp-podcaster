@@ -20,6 +20,7 @@ class Episode:
     guid: str
     mp3_url: Optional[str] = None
     pub_date: Optional[datetime] = None
+    description: Optional[str] = None
 
 
 def parse_rtp_date(date_str: str) -> Optional[datetime]:
@@ -162,24 +163,50 @@ class RTPPlayExtractor:
 
         return show_name, image_url
 
-    def extract_mp3_url(self, episode_url: str) -> Optional[str]:
-        """Parse an episode web page explicitly searching for the embedded MP3 payload."""
+    def extract_episode_metadata(self, episode_url: str) -> tuple[Optional[str], Optional[str]]:
+        """Parse an episode web page and return (mp3_url, description)."""
         html = self.fetch(episode_url)
+        soup = BeautifulSoup(html, "html.parser")
+
+        # 1. Extract MP3 URL
+        mp3_url: Optional[str] = None
         # Attempt standard JS player variable initialization match
         match = re.search(r'f\s*=\s*"(https?://[^"]+\.mp3[^"]*)"', html)
         if match:
-            return str(match.group(1))
+            mp3_url = str(match.group(1))
+        else:
+            # Fallback dictionary block parse strategy
+            for script in soup.find_all("script"):
+                text = script.string or ""
+                candidate = re.search(
+                    r'"(?:file|src|url)"\s*:\s*"(https?://(?:cdn|streaming)[^"]+\.mp3)"',
+                    text,
+                    re.IGNORECASE,
+                )
+                if candidate:
+                    mp3_url = str(candidate.group(1))
+                    break
 
-        # Fallback dictionary block parse strategy
-        soup = BeautifulSoup(html, "html.parser")
-        for script in soup.find_all("script"):
-            text = script.string or ""
-            candidate = re.search(
-                r'"(?:file|src|url)"\s*:\s*"(https?://(?:cdn|streaming)[^"]+\.mp3)"',
-                text,
-                re.IGNORECASE,
-            )
-            if candidate:
-                return str(candidate.group(1))
+        # 2. Extract description (Playlist / Setlist)
+        description: Optional[str] = None
+        # Priority 1: Specific description classes (usually contains the full setlist)
+        for cls in ["vod-description", "sinopse-text", "podcast-description"]:
+            desc_el = soup.find(class_=cls)
+            if desc_el:
+                description = desc_el.get_text(strip=True)
+                break
 
-        return None
+        # Priority 2: Meta description (backup, but often truncated)
+        if not description:
+            meta_desc = soup.find("meta", attrs={"name": "description"})
+            if isinstance(meta_desc, Tag) and meta_desc.get("content"):
+                raw_desc = str(meta_desc["content"]).strip()
+                # RTP often puts a summary like "Title - Description", try to extract only the description
+                if " - " in raw_desc:
+                    parts = raw_desc.split(" - ", 1)
+                    if len(parts) > 1:
+                        description = parts[1].strip()
+                else:
+                    description = raw_desc
+
+        return mp3_url, description

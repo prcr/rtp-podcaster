@@ -87,11 +87,14 @@ def main() -> None:
 
     print(f"Processing {len(new_episodes)} new episodes...")
     for ep in new_episodes:
-        mp3 = extractor.extract_mp3_url(ep.url)
+        mp3, desc = extractor.extract_episode_metadata(ep.url)
         if mp3:
             ep.mp3_url = mp3
         else:
             print(f"WARN: Could not locate mp3 URL for '{ep.title}' at {ep.url}")
+
+        if desc:
+            ep.description = desc
 
     # Build and write xml wrapper natively
     generator.create_or_update_feed(

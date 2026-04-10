@@ -24,12 +24,17 @@ def test_live_episode_extraction():
         f"Failed to parse date from string: '{first_ep.date_str}'"
     )
 
-    # Check structural audio resolutions manually mapped into real endpoints
-    mp3_url = extractor.extract_mp3_url(first_ep.url)
+    # Check structural audio resolutions and descriptions manually mapped into real endpoints
+    mp3_url, description = extractor.extract_episode_metadata(first_ep.url)
 
     assert mp3_url is not None
     assert mp3_url.startswith("http")
     assert ".mp3" in mp3_url.lower()
+
+    assert description is not None
+    assert len(description) > 0
+    # Description should usually be more detailed than just the title
+    # (though in some shows it might be the same, but for Alta Tensão it's usually the setlist)
 
     # Check show name and image URL are fetched cleanly from og: meta tags
     show_name, image_url = extractor.get_show_metadata()
